@@ -7,7 +7,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        params = dict(email="test@example.com", password="123qwe")
+        params = dict(email="payment@example.com", password="123qwe")
         user, user_status = User.objects.get_or_create(**params)
 
         user.is_staff = True
@@ -34,3 +34,4 @@ class Command(BaseCommand):
         )
 
         self.stdout.write(self.style.SUCCESS("Данные о платежах успешно загружены!"))
+    
