@@ -9,7 +9,8 @@ class PaymentSerializer(ModelSerializer):
         fields = "__all__"
 
 
-class UserSerializer(ModelSerializer):
+class UserCreateSerializer(ModelSerializer):
     class Meta:
         model = User
-        fields = "__all__"
+        fields = ["id", "email", "password"]
+        extra_kwargs = {'password': {'write_only': 'True'}}
