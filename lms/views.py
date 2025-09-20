@@ -22,17 +22,33 @@ class CourseViewSet(ModelViewSet):
             self.permission_classes = (IsAuthenticated, IsOwner,)
         return super().get_permissions()
 
+    def perform_create(self, serializer):
+        """Автоматически назначаем владельца при создании курса"""
+        serializer.save(owner=self.request.user)
+
 
 class LessonCreateApiView(CreateAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated, ~IsModer]
 
+    def perform_create(self, serializer):
+        """Автоматически назначаем владельца при создании урока"""
+        serializer.save(owner=self.request.user)
+
 
 class LessonListApiView(ListAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated, IsModer | IsOwner]
+
+    def get_queryset(self):
+        """Фильтруем уроки: модераторы видят все, владельцы - только свои"""
+        queryset = super().get_queryset()
+        if not self.request.user.groups.filter(name="moders").exists():
+            # Если не модератор - показываем только свои уроки
+            queryset = queryset.filter(owner=self.request.user)
+        return queryset
 
 
 class LessonRetrieveApiView(RetrieveAPIView):
@@ -50,4 +66,4 @@ class LessonUpdateApiView(UpdateAPIView):
 class LessonDestroyApiView(DestroyAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    permission_classes = [IsAuthenticated, ~IsModer | IsOwner]
+    permission_classes = [IsAuthenticated, IsOwner]

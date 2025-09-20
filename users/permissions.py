@@ -13,5 +13,7 @@ class IsModer(permissions.BasePermission):
 class IsOwner(permissions.BasePermission):
     """Проверяет, является ли пользователь владельцем."""
 
+    message = "Доступ разрешен только владельцу."
+
     def has_object_permission(self, request, view, obj):
-        return obj.user == request.user
+        return hasattr(obj, 'owner') and obj.owner == request.user
