@@ -1,5 +1,35 @@
-from django.db import models
 from django.conf import settings
+from django.db import models
+
+
+class Subscription(models.Model):
+    """
+    Модель подписки пользователя на курс
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        verbose_name="Пользователь",
+        related_name='subscriptions'
+    )
+    course = models.ForeignKey(
+        'Course',
+        on_delete=models.CASCADE,
+        verbose_name="Курс",
+        related_name='subscriptions'
+    )
+    subscribed_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Дата подписки"
+    )
+
+    class Meta:
+        verbose_name = "Подписка"
+        verbose_name_plural = "Подписки"
+        unique_together = ['user', 'course']
+
+    def __str__(self):
+        return f"{self.user.email} - {self.course.name}"
 
 
 class Course(models.Model):
@@ -29,6 +59,7 @@ class Course(models.Model):
         blank=True,
         null=True,
         help_text="Укажите владельца курса",
+        related_name='owned_courses'
     )
 
     class Meta:
@@ -79,6 +110,7 @@ class Lesson(models.Model):
         blank=True,
         null=True,
         help_text="Укажите владельца урока",
+        related_name='owned_lessons'
     )
 
     class Meta:
