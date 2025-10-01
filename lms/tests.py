@@ -10,7 +10,7 @@ from users.models import User
 
 class LessonCRUDTestCase(APITestCase):
     def setUp(self):
-        # Создаем пользователей
+        # Создаем пользователей через кастомный менеджер
         self.user = User.objects.create_user(
             email='user@test.com',
             password='testpass123'
@@ -224,3 +224,54 @@ class PermissionTestCase(APITestCase):
             reverse('lesson-destroy', kwargs={'pk': self.lesson.id})
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class YouTubeValidatorTestCase(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email='test@test.com',
+            password='testpass123'
+        )
+        self.course = Course.objects.create(
+            name='Test Course',
+            owner=self.user
+        )
+
+    def test_valid_youtube_links(self):
+        """Тест валидных YouTube ссылок"""
+        valid_links = [
+            'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            'https://youtube.com/watch?v=test123',
+            'https://youtu.be/dQw4w9WgXcQ',
+            'http://www.youtube.com/watch?v=test',
+        ]
+
+        self.client.force_authenticate(user=self.user)
+
+        for link in valid_links:
+            data = {
+                'name': f'Lesson with {link}',
+                'course': self.course.id,
+                'video_link': link,
+            }
+            response = self.client.post(reverse('lesson-create'), data=data)
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_invalid_links(self):
+        """Тест невалидных ссылок"""
+        invalid_links = [
+            'https://vk.com/video123',
+            'https://rutube.ru/video/123',
+            'https://example.com/video',
+        ]
+
+        self.client.force_authenticate(user=self.user)
+
+        for link in invalid_links:
+            data = {
+                'name': f'Lesson with {link}',
+                'course': self.course.id,
+                'video_link': link,
+            }
+            response = self.client.post(reverse('lesson-create'), data=data)
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
