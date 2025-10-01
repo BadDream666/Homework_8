@@ -20,10 +20,12 @@ class CourseViewSet(ModelViewSet):
     def get_permissions(self):
         if self.action == "create":
             self.permission_classes = (IsAuthenticated, ~IsModer,)
-        elif self.action in ["list", "update", "retrieve"]:
+        elif self.action in ["update", "partial_update", "retrieve"]:
             self.permission_classes = (IsAuthenticated, IsModer | IsOwner,)
         elif self.action == "destroy":
-            self.permission_classes = (IsAuthenticated, IsOwner,)
+            self.permission_classes = (IsAuthenticated, IsOwner | IsModer,)  # Модераторы могут удалять
+        else:  # list
+            self.permission_classes = (IsAuthenticated,)
         return super().get_permissions()
 
     def perform_create(self, serializer):
@@ -31,6 +33,7 @@ class CourseViewSet(ModelViewSet):
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def subscribe(self, request, pk=None):
+        """Подписаться на курс"""
         course = self.get_object()
         subscription, created = Subscription.objects.get_or_create(
             user=request.user,
@@ -42,12 +45,13 @@ class CourseViewSet(ModelViewSet):
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def unsubscribe(self, request, pk=None):
+        """Отписаться от курса"""
         course = self.get_object()
-        deleted = Subscription.objects.filter(
+        deleted_count, _ = Subscription.objects.filter(
             user=request.user,
             course=course
         ).delete()
-        if deleted[0] > 0:
+        if deleted_count > 0:
             return Response({'status': 'unsubscribed'})
         return Response({'status': 'not subscribed'}, status=400)
 
@@ -64,14 +68,15 @@ class LessonCreateApiView(CreateAPIView):
 class LessonListApiView(ListAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    permission_classes = [IsAuthenticated, IsModer | IsOwner]
+    permission_classes = [IsAuthenticated]
     pagination_class = LessonPaginator
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-        if not self.request.user.groups.filter(name="moders").exists():
-            queryset = queryset.filter(owner=self.request.user)
-        return queryset
+        """Модераторы видят все, обычные пользователи - только свои уроки"""
+        user = self.request.user
+        if user.groups.filter(name="moders").exists():
+            return Lesson.objects.all()
+        return Lesson.objects.filter(owner=user)
 
 
 class LessonRetrieveApiView(RetrieveAPIView):
@@ -89,4 +94,4 @@ class LessonUpdateApiView(UpdateAPIView):
 class LessonDestroyApiView(DestroyAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    permission_classes = [IsAuthenticated, IsOwner]
+    permission_classes = [IsAuthenticated, IsOwner | IsModer]  # Модераторы могут удалять

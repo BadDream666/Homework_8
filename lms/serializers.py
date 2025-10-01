@@ -23,9 +23,10 @@ class CourseSerializer(ModelSerializer):
 
     def get_lessons_info(self, obj):
         lessons = obj.lesson_set.all()
-        return LessonSerializer(lessons, many=True).data
+        return LessonShortSerializer(lessons, many=True).data
 
     def get_is_subscribed(self, obj):
+        """Проверяет, подписан ли текущий пользователь на курс"""
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return obj.subscriptions.filter(user=request.user).exists()
@@ -34,6 +35,14 @@ class CourseSerializer(ModelSerializer):
     class Meta:
         model = Course
         fields = "__all__"
+
+
+class LessonShortSerializer(ModelSerializer):
+    """Упрощенный сериализатор для уроков в курсе"""
+
+    class Meta:
+        model = Lesson
+        fields = ['id', 'name', 'description', 'video_link']
 
 
 class LessonSerializer(ModelSerializer):
