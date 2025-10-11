@@ -1,35 +1,14 @@
-from django.core.exceptions import ValidationError
-from rest_framework import serializers
-from urllib.parse import urlparse
+from rest_framework.serializers import ValidationError
 
 
-def validate_youtube_only(value):
-    """
-    Валидатор для проверки, что ссылка ведет только на youtube.com
-    """
-    if value:
-        parsed_url = urlparse(value)
-        # Проверяем, что домен - youtube.com или youtu.be
-        allowed_domains = ['www.youtube.com', 'youtube.com', 'youtu.be']
-        if parsed_url.netloc not in allowed_domains:
-            raise ValidationError(
-                "Разрешены только ссылки на youtube.com"
-            )
-
-
-class YouTubeValidator:
-    """
-    Класс-валидатор для проверки YouTube ссылок
-    """
-    def __init__(self, field):
+class LinkValidator:
+    def __init__(
+        self, field
+    ):  # field - данные с которыми будут сравниваться входящие данные от пользователя
         self.field = field
 
-    def __call__(self, attrs):
-        field_value = attrs.get(self.field)
-        if field_value:
-            parsed_url = urlparse(field_value)
-            allowed_domains = ['www.youtube.com', 'youtube.com', 'youtu.be']
-            if parsed_url.netloc not in allowed_domains:
-                raise serializers.ValidationError(
-                    {self.field: "Разрешены только ссылки на youtube.com"}
-                )
+    def __call__(self, value):  # value - те данные которые приходят от пользователя
+        link = dict(value).get(self.field)
+        # если в передаваемых данных value есть значение 'youtube.com' с ключом 'link', то:
+        if bool(dict(value).get("link")) and not bool("youtube.com" in link):
+            raise ValidationError("Недопустимая ссылка")

@@ -34,4 +34,3 @@ class Command(BaseCommand):
         )
 
         self.stdout.write(self.style.SUCCESS("Данные о платежах успешно загружены!"))
-    

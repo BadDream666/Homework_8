@@ -1,56 +1,38 @@
 from rest_framework.serializers import ModelSerializer, SerializerMethodField
-from rest_framework import serializers
 
 from lms.models import Course, Lesson, Subscription
-from lms.validators import YouTubeValidator
-
-
-class SubscriptionSerializer(ModelSerializer):
-    class Meta:
-        model = Subscription
-        fields = ['id', 'user', 'course', 'subscribed_at']
-        read_only_fields = ['user', 'subscribed_at']
+from lms.validators import LinkValidator
 
 
 class CourseSerializer(ModelSerializer):
     lessons_quantity = SerializerMethodField()
     lessons_info = SerializerMethodField()
-    owner = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    is_subscribed = SerializerMethodField()
+    user_signed = SerializerMethodField(read_only=True)
 
     def get_lessons_quantity(self, obj):
         return obj.lesson_set.count()
 
     def get_lessons_info(self, obj):
         lessons = obj.lesson_set.all()
-        return LessonShortSerializer(lessons, many=True).data
+        return LessonSerializer(lessons, many=True).data
 
-    def get_is_subscribed(self, obj):
-        """Проверяет, подписан ли текущий пользователь на курс"""
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return obj.subscriptions.filter(user=request.user).exists()
-        return False
+    def get_user_signed(self, instance):
+        user = self.context["request"].user
+        return Subscription.objects.filter(user=user, course=instance).exists()
 
     class Meta:
         model = Course
         fields = "__all__"
 
 
-class LessonShortSerializer(ModelSerializer):
-    """Упрощенный сериализатор для уроков в курсе"""
-
-    class Meta:
-        model = Lesson
-        fields = ['id', 'name', 'description', 'video_link']
-
-
 class LessonSerializer(ModelSerializer):
-    owner = serializers.HiddenField(default=serializers.CurrentUserDefault())
-
     class Meta:
         model = Lesson
         fields = "__all__"
-        validators = [
-            YouTubeValidator(field='video_link')
-        ]
+        validators = [LinkValidator(field="video_link")]
+
+
+class SubscriptionSerializer(ModelSerializer):
+    class Meta:
+        model = Subscription
+        fields = "__all__"
