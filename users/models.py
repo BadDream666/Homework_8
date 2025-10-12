@@ -52,7 +52,11 @@ class Payment(models.Model):
     ]
 
     client = models.ForeignKey(
-        User, on_delete=models.CASCADE, verbose_name="Пользователь"
+        User,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        verbose_name="Пользователь",
     )
     payment_date = models.DateField(default=datetime.now, verbose_name="Дата оплаты")
     paid_course = models.ForeignKey(
@@ -69,10 +73,27 @@ class Payment(models.Model):
         blank=True,
         null=True,
     )
-    amount = models.DecimalField(decimal_places=2, max_digits=20, verbose_name="Сумма")
+    amount = models.PositiveIntegerField(verbose_name="Сумма оплаты")
     type = models.CharField(
-        max_length=50, choices=PAYMENT_CHOICES, verbose_name="Способ оплаты"
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name="Cпособ оплаты",
+        choices=PAYMENT_CHOICES,
+    )
+    link = models.URLField(
+        max_length=400, blank=True, null=True, verbose_name="Ссылка на оплату"
+    )
+    session_id = models.CharField(
+        max_length=255, blank=True, null=True, verbose_name="id сессии"
     )
 
     def __str__(self):
         return f"{self.client} - {self.get_type_display()} - {self.amount}"
+
+    class Meta:
+        verbose_name = "Платеж"
+        verbose_name_plural = "Платежи"
+
+    def __str__(self):
+        return f"{self.session_id}"
