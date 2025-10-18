@@ -1,11 +1,20 @@
+from datetime import datetime
+
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
+from rest_framework.decorators import action
 from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 from users.models import Payment, User
-from users.serializers import PaymentSerializer, UserSerializer
+from users.serializers import (
+    CustomTokenPairSerializer,
+    PaymentSerializer,
+    UserSerializer,
+)
 from users.services import (
     create_stripe_price,
     create_stripe_product,
@@ -56,3 +65,9 @@ class PaymentCreateAPIView(CreateAPIView):
         payment.link = payment_link
         payment.product = product["name"]
         payment.save()
+
+
+class CustomTokenPairView(TokenObtainPairView):
+    """Расширение класса TokenObtainPairView"""
+
+    serializer_class = CustomTokenPairSerializer

@@ -87,11 +87,17 @@ class Lesson(models.Model):
 
 
 class Subscription(models.Model):
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, verbose_name="Курс")
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        verbose_name="курс",
+        related_name="subscriptions",
+    )
     user = models.ForeignKey(
         AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        verbose_name="Пользователь",
+        verbose_name="пользователь",
+        related_name="subscriptions",
     )
 
     class Meta:
